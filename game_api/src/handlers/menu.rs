@@ -1,9 +1,8 @@
 use std::borrow::Cow;
-use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
-use crate::constraint::username::Username;
+use crate::constraint::Username;
 use crate::managers::room::{RoomData, RoomID, RoomState};
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
 
@@ -19,31 +18,18 @@ impl<'factory> Handler for MenuRequestHandler<'factory> {
         use Request::*;
         matches!(
             request_info.data,
-            CreateRoom { .. } | RoomList | JoinRoom(_) | PersonalStats | Highscores | Logout
+            CreateRoom { .. } | RoomList | JoinRoom(_)
         )
     }
 
-    fn handle(&mut self, request_info: RequestInfo) -> RequestResult {
+    fn handle(&mut self, request_info: &RequestInfo<'_>) -> RequestResult {
         match request_info.data {
-            Request::JoinRoom(id) => Ok(self.join_room(id)),
-            Request::CreateRoom { name, max_users } => Ok(self.create_room(name, max_users)),
-            Request::PersonalStats => {
-                let resp = self.get_personal_stats().map_err(|_| Error::NoGamesPlayed);
-                let response = Response::PersonalStats(resp);
-                let result = RequestResult::without_handler(response);
-                Ok(result)
-            }
-            Request::Highscores => {
-                let highscores = self.get_high_scores()?;
-                let resp = Response::Highscores(highscores);
-                let result = RequestResult::without_handler(resp);
-                Ok(result)
-            }
-            Request::Logout => Ok(self.logout()),
-            Request::RoomList => Ok(self.get_rooms()),
-            Request::CreateQuestion(question) => self.create_question(question),
+            Request::JoinRoom(id) => self.join_room(id),
+            Request::CreateRoom { name, max_users } => self.create_room(name, max_users),
+            // Request::Logout => Ok(self.logout()),
+            Request::RoomList => self.get_rooms(),
 
-            _ => Ok(RequestResult::new_error("Invalid request")),
+            _ => RequestResult::new_error("Invalid request"),
         }
     }
 }
@@ -53,17 +39,17 @@ impl<'factory> MenuRequestHandler<'factory> {
         Self { factory, user }
     }
 
-    fn logout(&self) -> RequestResult {
-        self.factory
-            .login_manager()
-            .write()
-            .unwrap()
-            .logout(&self.user);
-        RequestResult::new(
-            Response::Logout,
-            self.factory.create_login_request_handler(),
-        )
-    }
+    // fn logout(&self) -> RequestResult {
+    //     self.factory
+    //         .login_manager()
+    //         .write()
+    //         .unwrap()
+    //         .logout(&self.user);
+    //     RequestResult::new(
+    //         Response::Logout,
+    //         self.factory.create_login_request_handler(),
+    //     )
+    // }
 
     fn get_rooms(&self) -> RequestResult {
         let room_manager = self.factory.room_manager();
@@ -85,16 +71,6 @@ impl<'factory> MenuRequestHandler<'factory> {
             .ok_or(Error::UnknownRoomID(id));
         RequestResult::without_handler(Response::PlayersInRoom(users))
     }
-
-    // fn get_personal_stats(&self) -> Result<Statistics, db::Error> {
-    //     self.factory
-    //         .statistics_manager()
-    //         .get_user_statistics(&self.user)
-    // }
-
-    // fn get_high_scores(&self) -> Result<Highscores, db::Error> {
-    //     self.factory.statistics_manager().get_high_scores()
-    // }
 
     fn join_room(&self, id: RoomID) -> RequestResult {
         let mk = Response::JoinRoom;

@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use serde::{Deserialize, Serialize};
 
-use crate::constraint::username::Username;
+use crate::constraint::Username;
 
 pub type RoomID = usize;
 

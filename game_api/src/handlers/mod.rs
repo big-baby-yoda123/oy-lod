@@ -4,9 +4,6 @@ pub use factory::RequestHandlerFactory;
 pub mod game;
 pub use game::GameRequestHandler;
 
-pub mod login;
-pub use login::LoginRequestHandler;
-
 pub mod menu;
 pub use menu::MenuRequestHandler;
 

@@ -1,25 +1,19 @@
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 
-use crate::constraint::username::Username;
+use crate::constraint::Username;
 use crate::handlers::{self, Handler};
 use crate::managers::room::{Room, RoomState};
-use crate::managers::statistics::Highscores;
 
 use super::Error;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum Response {
     Error(String),
-    Login(Result<(), handlers::login::Error>),
-    Signup(Result<(), handlers::login::Error>),
-    Logout,
     RoomList(Vec<Room>),
     PlayersInRoom(Result<Vec<Username>, handlers::menu::Error>),
     JoinRoom(Result<(), handlers::menu::Error>),
     CreateRoom,
-    // PersonalStats(Result<Statistics, handlers::menu::Error>),
-    Highscores(Highscores),
     CloseRoom(Result<(), handlers::room_user::Error>),
     StartGame(Result<(), handlers::room_user::Error>),
     RoomState {

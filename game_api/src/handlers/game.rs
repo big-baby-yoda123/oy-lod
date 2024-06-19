@@ -4,7 +4,7 @@ use std::time::{self, Duration, Instant, SystemTime};
 use serde::{Deserialize, Serialize};
 use tiny_rng::{Rand, Rng};
 
-use crate::constraint::username::Username;
+use crate::constraint::Username;
 use crate::managers::game::GameID;
 use crate::messages::{PlayerResults, Request, RequestInfo, RequestResult, Response};
 

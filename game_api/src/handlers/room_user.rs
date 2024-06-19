@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::constraint::username::Username;
+use crate::constraint::Username;
 use crate::managers::room::{RoomID, RoomState};
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
 
@@ -22,13 +22,13 @@ impl<'factory> Handler for RoomUserRequestHandler<'factory> {
         )
     }
 
-    fn handle(&mut self, request_info: RequestInfo) -> RequestResult {
+    fn handle(&mut self, request_info: &RequestInfo<'_>) -> RequestResult {
         match request_info.data {
             Request::RoomState => self.room_state(),
             Request::CloseRoom => self.close_room(),
             Request::StartGame => self.start_game(),
-            Request::LeaveRoom | Request::Logout => self.leave_room(),
-            _ => Ok(RequestResult::new_error("Invalid request")),
+            Request::LeaveRoom => self.leave_room(),
+            _ => RequestResult::new_error("Invalid request"),
         }
     }
 }
@@ -62,7 +62,7 @@ impl<'factory> RoomUserRequestHandler<'factory> {
 
         let resp = Response::LeaveRoom;
         let handler = self.factory.create_menu_request_handler(self.user.clone());
-        Ok(RequestResult::new(resp, handler))
+        RequestResult::new(resp, handler)
     }
 
     fn room_state(&mut self) -> RequestResult {
@@ -76,33 +76,33 @@ impl<'factory> RoomUserRequestHandler<'factory> {
             let handler = self
                 .factory
                 .create_game_request_handler(self.user.clone(), self.room_id);
-            return Ok(RequestResult::new(resp, handler));
+            return RequestResult::new(resp, handler);
         }
 
-        Ok(RequestResult::without_handler(Response::RoomState {
+        RequestResult::without_handler(Response::RoomState {
             state: room.room_data().state,
             name: room.room_data().name.clone(),
             players: room.users().to_vec(),
-        }))
+        })
     }
 
     fn close_room(&mut self) -> RequestResult {
         if !self.is_admin {
             let resp = Response::CloseRoom(Err(Error::NotAdmin));
-            return Ok(RequestResult::without_handler(resp));
+            return RequestResult::without_handler(resp);
         }
 
         let room_manager = self.factory.room_manager();
         room_manager.write().unwrap().delete_room(self.room_id);
         let resp = Response::CloseRoom(Ok(()));
         let handler = self.factory.create_menu_request_handler(self.user.clone());
-        Ok(RequestResult::new(resp, handler))
+        RequestResult::new(resp, handler)
     }
 
     fn start_game(&mut self) -> RequestResult {
         if !self.is_admin {
             let resp = Response::StartGame(Err(Error::NotAdmin));
-            return Ok(RequestResult::without_handler(resp));
+            return RequestResult::without_handler(resp);
         }
 
         self.factory
@@ -116,7 +116,7 @@ impl<'factory> RoomUserRequestHandler<'factory> {
 
         let Some(room) = room_manager_lock.room(self.room_id) else {
             let resp = Response::StartGame(Err(Error::UnknownRoomID(self.room_id)));
-            return Ok(RequestResult::without_handler(resp));
+            return RequestResult::without_handler(resp);
         };
 
         let game_id = self
@@ -133,7 +133,7 @@ impl<'factory> RoomUserRequestHandler<'factory> {
         let handler = self
             .factory
             .create_game_request_handler(self.user.clone(), game_id);
-        Ok(RequestResult::new(resp, handler))
+        RequestResult::new(resp, handler)
     }
 }
 
