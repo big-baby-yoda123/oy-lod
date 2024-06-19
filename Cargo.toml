@@ -1,3 +1,4 @@
 [workspace]
 members = ["app", "server", "game_api"]
 resolver = "2"
+default-members = ["app"]

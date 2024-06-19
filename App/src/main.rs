@@ -20,7 +20,13 @@ fn main() {
 }
 
 #[derive(Resource)]
-pub struct Players(pub f32);
+pub struct Players {
+    palyers: Vec<Player>,
+};
+
+struct Player {
+    num_cards: u32,
+}
 
 pub fn spawn_cards(
     mut commands: Commands,
