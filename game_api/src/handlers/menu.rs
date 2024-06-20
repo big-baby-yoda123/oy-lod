@@ -23,9 +23,11 @@ impl<'factory> Handler for MenuRequestHandler<'factory> {
     }
 
     fn handle(&mut self, request_info: &RequestInfo<'_>) -> RequestResult {
-        match request_info.data {
-            Request::JoinRoom(id) => self.join_room(id),
-            Request::CreateRoom { name, max_users } => self.create_room(name, max_users),
+        match &request_info.data {
+            Request::JoinRoom(id) => self.join_room(*id),
+            Request::CreateRoom { name, max_users } => {
+                self.create_room(std::borrow::Cow::Borrowed(name), *max_users)
+            }
             // Request::Logout => Ok(self.logout()),
             Request::RoomList => self.get_rooms(),
 

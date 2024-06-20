@@ -3,6 +3,7 @@ use std::io::{Read, Write};
 
 use crate::constraint::Username;
 use crate::handlers::{self, Handler};
+use crate::managers::game::{BallColors, CardID, GameData};
 use crate::managers::room::{Room, RoomState};
 
 use super::Error;
@@ -23,6 +24,12 @@ pub enum Response {
     },
     LeaveRoom,
     LeaveGame,
+    PlayCard(Result<(), handlers::game::Error>),
+    DrawCard(Result<CardID, handlers::game::Error>),
+    RevealCard(Result<(bool, BallColors), handlers::game::Error>),
+    GameState {
+        state: GameData,
+    },
 }
 
 impl Response {
@@ -54,13 +61,13 @@ impl Response {
     }
 }
 
-pub struct RequestResult {
+pub struct RequestResult<'a> {
     pub response: Response,
-    pub new_handler: Option<Box<dyn Handler>>,
+    pub new_handler: Option<Box<dyn Handler + 'a>>,
 }
 
-impl RequestResult {
-    pub fn new(response: Response, new_handler: impl Handler) -> Self {
+impl<'a> RequestResult<'a> {
+    pub fn new(response: Response, new_handler: impl Handler + 'a) -> Self {
         let new_handler = Some(Box::new(new_handler) as Box<dyn Handler>);
         Self {
             response,

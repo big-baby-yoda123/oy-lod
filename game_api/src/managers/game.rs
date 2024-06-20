@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::iter;
 
+use serde::{Deserialize, Serialize};
+
 use crate::constraint::Username;
 
 use super::room::{Room, RoomID};
@@ -8,7 +10,11 @@ use super::room::{Room, RoomID};
 pub type Score = f64;
 pub type GameID = RoomID;
 
-pub enum GameErrors {}
+#[derive(Debug, thiserror::Error)]
+pub enum GameErrors {
+    #[error("Not Enough Players")]
+    NotEnoughPlayers,
+}
 
 pub struct GameManager {
     games: HashMap<GameID, Game>,
@@ -21,9 +27,9 @@ impl GameManager {
         }
     }
 
-    pub fn create_game(&mut self, room: &Room) -> Result<&Game, GameErrors> {
+    pub fn create_game(&mut self, room: &Room) -> Option<&Game> {
         let game = Game::new(room.room_data().room_id, room.users().iter().cloned());
-        Ok(self.games.entry(game.id).or_insert(game))
+        Some(self.games.entry(game.id).or_insert(game))
     }
 
     pub fn delete_game(&mut self, id: &GameID) {
@@ -55,12 +61,12 @@ impl GameManager {
 
 pub struct Game {
     id: GameID,
-    players: HashMap<Username, GameData>,
+    players: HashMap<Username, PlayerData>,
 }
 
 impl Game {
     pub fn new(id: RoomID, users: impl Iterator<Item = Username>) -> Self {
-        let players = users.zip(iter::repeat_with(GameData::default)).collect();
+        let players = users.zip(iter::repeat_with(PlayerData::default)).collect();
 
         Self { id, players }
     }
@@ -94,16 +100,35 @@ impl Game {
         false
     }
 
-    pub fn results(&self) -> impl Iterator<Item = (&Username, &GameData)> {
+    pub fn results(&self) -> impl Iterator<Item = (&Username, &PlayerData)> {
         self.players.iter()
+    }
+
+    pub fn play_card(
+        &self,
+        card_id: CardID,
+        target_player: Option<Username>,
+    ) -> Result<(bool, BallColors), crate::handlers::game::Error> {
+        todo!()
+    }
+
+    pub fn reveal_card(
+        &self,
+        guessed_color: BallColors,
+    ) -> Result<(bool, BallColors), crate::handlers::game::Error> {
+        todo!()
+    }
+
+    pub fn draw_card(&self) -> Result<CardID, crate::handlers::game::Error> {
+        todo!()
     }
 }
 
 // fill
-#[derive(Debug, Default, Clone)]
-pub struct GameData {}
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlayerData {}
 
-impl GameData {
+impl PlayerData {
     // pub fn submit_answer(&mut self, correct: bool, answer_time: Duration) {
     //     self.left = false; // if the user left and came back
     //     let old_total = self.correct_answers + self.wrong_answers;
@@ -118,4 +143,27 @@ impl GameData {
     //         self.wrong_answers += 1;
     //     }
     // }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum CardID {}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum BallColors {
+    BLUE,
+    ORANGE,
+    PURPLE,
+    WHITE,
+    YELLOW,
+    RED,
+    THELET,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GameData {
+    pub players: HashMap<Username, PlayerData>,
+    pub played_card: Option<(Username, CardID)>,
+    pub drawn_card: Option<Username>,
+    //                             guessed color | actuall color
+    pub revealed_card: Option<(Username, (BallColors, BallColors))>,
 }

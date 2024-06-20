@@ -124,7 +124,8 @@ impl<'factory> RoomUserRequestHandler<'factory> {
             .game_manager()
             .write()
             .unwrap()
-            .create_game(room)?
+            .create_game(room)
+            .unwrap()
             .id();
 
         drop(room_manager_lock);

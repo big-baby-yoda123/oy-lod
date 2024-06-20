@@ -4,6 +4,8 @@ use std::io::{Read, Write};
 use serde::{Deserialize, Serialize};
 
 use super::Error;
+use crate::constraint::Username;
+use crate::managers::game::{BallColors, CardID};
 use crate::managers::room::RoomID;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -21,6 +23,15 @@ pub enum Request<'a> {
     LeaveRoom,
     LeaveGame,
     GameResult,
+    PlayCard {
+        card_id: CardID,
+        target_player: Option<Username>,
+    },
+    DrawCard,
+    RevealCard {
+        guessed_color: BallColors,
+    },
+    GameState,
 }
 
 impl<'buf> Request<'buf> {

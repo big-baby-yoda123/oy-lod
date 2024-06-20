@@ -37,7 +37,11 @@ impl RequestHandlerFactory {
         RoomUserRequestHandler::new(self, user, is_admin, room_id)
     }
 
-    pub fn create_game_request_handler(&self, user: Username, game_id: GameID) -> impl Handler {
+    pub fn create_game_request_handler(
+        &self,
+        user: Username,
+        game_id: GameID,
+    ) -> impl Handler + '_ {
         GameRequestHandler::new(self, user, game_id)
     }
 
